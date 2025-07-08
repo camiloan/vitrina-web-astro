@@ -1,0 +1,40 @@
+---
+// src/components/showcase/vanilla/CoolButton.astro
+---
+
+<button class="cool-button"> ¡Haz Clic! </button>
+
+<style>
+    .cool-button {
+        background-image: linear-gradient(
+            to right,
+            #314755 0%,
+            #26a0da 51%,
+            #314755 100%
+        );
+        margin: 10px;
+        padding: 15px 30px;
+        text-align: center;
+        text-transform: uppercase;
+        transition: 0.5s;
+        background-size: 200% auto;
+        color: white;
+        border-radius: 10px;
+        display: block;
+        border: none;
+        cursor: pointer;
+    }
+
+    .cool-button:hover {
+        background-position: right center; /* change the direction of the change here */
+        color: #fff;
+        text-decoration: none;
+    }
+</style>
+
+<script>
+    // script de lado del cliente para la interactividad
+    document.querySelector(".cool-button")?.addEventListener("click", () => {
+        alert("¡Hiciste clic en el botón!");
+    });
+</script>
