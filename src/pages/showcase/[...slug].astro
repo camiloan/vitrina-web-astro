@@ -1,0 +1,106 @@
+---
+// src/pages/showcase/[...slug].astro
+import { getCollection, type CollectionEntry } from "astro:content";
+import { Code } from "astro/components";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+    const showcaseEntries = await getCollection("showcase");
+    return showcaseEntries.map((entry) => ({
+        params: { slug: entry.slug },
+        props: { entry },
+    }));
+}
+
+type Props = {
+    entry: CollectionEntry<"showcase">;
+};
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+
+const componentRelativePath = entry.data.componentPath.replace("@/", "src/");
+const componentAbsolutePath = path.resolve(
+    process.cwd(),
+    componentRelativePath,
+);
+const componentCode = await readFile(componentAbsolutePath, "utf-8");
+---
+
+<Layout title={entry.data.title}>
+    <div
+        class="relative w-full h-screen bg-base-200 text-base-content overflow-hidden"
+    >
+        <div
+            class="fixed top-4 left-4 z-30 p-4 max-w-sm bg-base-100/50 backdrop-blur-sm border border-base-300 rounded-lg shadow-lg"
+        >
+            <a
+                href="/#showcase"
+                class="flex items-center gap-2 text-sm font-semibold text-primary mb-3 hover:underline"
+            >
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    ><path stroke="none" d="M0 0h24v24H0z" fill="none"
+                    ></path><path d="M5 12l14 0"></path><path d="M5 12l6 6"
+                    ></path><path d="M5 12l6 -6"></path></svg
+                >
+                Volver al Portafolio
+            </a>
+            <h1 class="text-2xl font-bold">{entry.data.title}</h1>
+            <p class="mt-1 opacity-80">{entry.data.description}</p>
+            <span
+                class="inline-block mt-3 bg-primary text-primary-content text-xs font-medium px-3 py-1 rounded-full"
+                >{entry.data.tech}</span
+            >
+        </div>
+
+        <div id="split-container" class="flex w-full h-full">
+            <div id="split-content" class="overflow-auto relative z-10 @container">
+                <div class="w-full h-full items-center justify-center ">
+                    <Content />
+                </div>
+            </div>
+
+            <div
+                id="split-code"
+                class="overflow-auto bg-base-300 relative z-10"
+            >
+                <div class="p-6">
+                    <h2 class="text-xl font-semibold mb-4">Código Fuente</h2>
+                    <Code
+                        code={componentCode}
+                        lang="astro"
+                        theme="github-dark"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+</Layout>
+
+<script>
+    import Split from "split.js";
+
+    Split(["#split-content", "#split-code"], {
+        sizes: [100, 0],
+        minSize: 0,
+        gutterSize: 12,
+        snapOffset: 30,
+        cursor: "col-resize",
+        gutter: (index, direction) => {
+            const gutter = document.createElement("div");
+            gutter.className = `gutter gutter-${direction}`;
+            return gutter;
+        },
+    });
+</script>

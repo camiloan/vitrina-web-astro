@@ -8,8 +8,9 @@ const showcaseCollection = defineCollection({
         description: z.string(),
         tech: z.enum(['Astro', 'React', 'Angular', 'JavaScript', 'CSS']),
         tags: z.array(z.string()),
-        thumbnail: z.string().optional(),
         pubDate: z.date(),
+        componentPath: z.string(),
+        thumbnail: z.string().optional(),
     }),
 });
 

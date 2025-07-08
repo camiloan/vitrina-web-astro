@@ -1,25 +1,68 @@
 ---
-// src/pages/index.astro
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 
-// 1. Obtenemos todos los items de la colección "showcase"
+// 1. Obtenemos todos los items de la colección
 const allShowcaseItems = await getCollection("showcase");
+
+// 2. Obtenemos una lista única de tecnologías para los botones de filtro
+const allTechs = [...new Set(allShowcaseItems.map((item) => item.data.tech))];
 ---
 
 <Layout title="Mi Vitrina de Componentes">
-	<main>
-		<h1 class="title">Mi Vitrina de Componentes</h1>
-		<p class="subtitle">Una colección de hallazgos de frontend.</p>
+	<main class="container mx-auto p-4 md:p-8">
+		<div class="text-center mb-12">
+			<h1 class="text-5xl font-bold mb-2">Mi Vitrina de Componentes</h1>
+			<p class="text-xl text-base-content/70">
+				Una colección de hallazgos de frontend.
+			</p>
+		</div>
 
-		<div class="grid">
+		<div
+			class="flex flex-col md:flex-row gap-4 justify-center items-center mb-12"
+		>
+			<input
+				type="search"
+				id="search-input"
+				placeholder="Buscar componente..."
+				class="input w-full md:w-auto"
+			/>
+			<div class="flex flex-wrap justify-center gap-2">
+				<button class="btn btn-primary filter-btn" data-tech="all"
+					>Todos</button
+				>
+				{
+					allTechs.map((tech) => (
+						<button class="btn filter-btn" data-tech={tech}>
+							{tech}
+						</button>
+					))
+				}
+			</div>
+		</div>
+
+		<div
+			class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+			id="component-grid"
+		>
 			{
 				allShowcaseItems.map((item) => (
-					<a href={`/showcase/${item.slug}`} class="card">
-						<h2>{item.data.title} &rarr;</h2>
-						<p>{item.data.description}</p>
-						<div class="tags">
-							<span class="tech-tag">{item.data.tech}</span>
+					<a
+						href={`/showcase/${item.slug}`}
+						class="card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+						data-title={item.data.title}
+						data-tech={item.data.tech}
+					>
+						<div class="card-body">
+							<h2 class="card-title">{item.data.title}</h2>
+							<p class="text-base-content/70">
+								{item.data.description}
+							</p>
+							<div class="card-actions justify-end mt-4">
+								<div class="badge badge-outline">
+									{item.data.tech}
+								</div>
+							</div>
 						</div>
 					</a>
 				))
@@ -27,52 +70,65 @@ const allShowcaseItems = await getCollection("showcase");
 		</div>
 	</main>
 </Layout>
+<script>
+	// Se envuelve toda la lógica en una función para asegurar que se ejecuta
+	// solo cuando la página ha cargado.
+	function setupFilters() {
+		// Se especifica el tipo exacto para que TypeScript conozca la propiedad .value
+		const searchInput = document.getElementById(
+			"search-input",
+		) as HTMLInputElement | null;
 
-<style>
-	/* Estilos básicos para la página de inicio */
-	main {
-		padding: 2rem;
-		max-width: 1200px;
-		margin: auto;
+		// Si el input de búsqueda no existe, no hacemos nada.
+		// Esto resuelve el error "'searchInput' is possibly 'null'".
+		if (!searchInput) {
+			return;
+		}
+
+		const filterButtons =
+			document.querySelectorAll<HTMLButtonElement>(".filter-btn");
+		const componentCards =
+			document.querySelectorAll<HTMLAnchorElement>(".card");
+		let currentTechFilter = "all";
+
+		// Función principal que aplica los filtros
+		const applyFilters = () => {
+			const searchTerm = searchInput.value.toLowerCase();
+
+			componentCards.forEach((card) => {
+				const cardTitle = card.dataset.title?.toLowerCase() || "";
+				const cardTech = card.dataset.tech || "";
+
+				const matchesSearch = cardTitle.includes(searchTerm);
+				const matchesTech =
+					currentTechFilter === "all" ||
+					cardTech === currentTechFilter;
+
+				if (matchesSearch && matchesTech) {
+					card.style.display = "grid";
+				} else {
+					card.style.display = "none";
+				}
+			});
+		};
+
+		// Lógica para la barra de búsqueda
+		searchInput.addEventListener("input", applyFilters);
+
+		// Lógica para los botones de filtro
+		filterButtons.forEach((button) => {
+			button.addEventListener("click", () => {
+				filterButtons.forEach((btn) =>
+					btn.classList.remove("btn-primary"),
+				);
+				button.classList.add("btn-primary");
+
+				currentTechFilter = button.dataset.tech || "all";
+				applyFilters();
+			});
+		});
 	}
-	.title {
-		font-size: 3rem;
-		text-align: center;
-		margin-bottom: 0.5rem;
-	}
-	.subtitle {
-		font-size: 1.2rem;
-		text-align: center;
-		color: #888;
-		margin-bottom: 3rem;
-	}
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: 1.5rem;
-	}
-	.card {
-		display: block;
-		padding: 1.5rem;
-		border: 1px solid #ddd;
-		border-radius: 8px;
-		text-decoration: none;
-		color: inherit;
-		transition: border-color 0.2s;
-	}
-	.card:hover {
-		border-color: #26a0da;
-	}
-	.card h2 {
-		margin-bottom: 0.5rem;
-	}
-	.tags {
-		margin-top: 1rem;
-	}
-	.tech-tag {
-		background-color: #f0f0f0;
-		padding: 0.25rem 0.75rem;
-		border-radius: 16px;
-		font-size: 0.8rem;
-	}
-</style>
+
+	// Ejecutamos la función de configuración
+	setupFilters();
+</script>
